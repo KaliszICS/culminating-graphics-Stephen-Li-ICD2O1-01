@@ -49,6 +49,7 @@ public class HelloFX extends Application {
 
         //Create game layer
         Pane gameLayer = new Pane();
+        gameLayer.setBackground(new Background(new BackgroundFill(Color.DARKGRAY, null, null)));
 
         //Create shapes
         Rectangle paddle = new Rectangle(270, 430, 100, 15);
@@ -102,29 +103,23 @@ public class HelloFX extends Application {
         long[] startTime = {0};
         AnimationTimer ballStart = new AnimationTimer() {
             public void handle(long time) {
-                if (startTime[0] == 0) {
+                if (startTime[0] == 0) { //Sets temp variable at current time
                     startTime[0] = time;
                     gameLayer.getChildren().add(countdownTimer);
                 }
-                long elaspedTime = time;
-                if (elaspedTime == 1L) {
-                    l = 3;
-                    gameLayer.getChildren().add(l);
+                long elaspedTime = time - startTime[0]; //Check how long has passed since timer started
+                if (elaspedTime >= 1_000_000_000L && elaspedTime <= 2_000_000_000L) {
+                    countdownTimer.setText("2");
                 }
-                if (elaspedTime == 1_000_000_000L) {
-                    gameLayer.getChildren().remove(l);
-                    l = 2;
-                    gameLayer.getChildren().add(l);
+                if (elaspedTime >= 2_000_000_000L && elaspedTime <= 3_000_000_000L) {
+                    countdownTimer.setText("1");
                 }
-                if (elaspedTime == 2_000_000_000L) {
-                    gameLayer.getChildren().remove(l);
-                    l = 1;
-                    gameLayer.getChildren().add(l);
+                if (elaspedTime >= 3_000_000_000L && elaspedTime <= 4_000_000_000L) {
+                    countdownTimer.setText("GO");
                 }
-                if (elaspedTime == 3_000_000_000L) {
-                    gameLayer.getChildren().remove(l);
-                    l = "go";
-                    gameLayer.getChildren().add(l);
+                else if (elaspedTime >= 4_000_000_000L) {
+                    gameLayer.getChildren().remove(countdownTimer);
+                    stop();
                 }
             }
         };
