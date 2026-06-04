@@ -22,11 +22,17 @@ import javafx.scene.input.KeyCode; //added
 import javafx.animation.AnimationTimer; //added
 import javafx.scene.layout.Background; //added
 import javafx.scene.layout.BackgroundFill; //added
+import java.util.Random; //added
 
 public class HelloFX extends Application {
     //Track if keys for paddle are pressed
     boolean leftPressed = false;
     boolean rightPressed = false;
+    double ballSpeedX = 4;
+    double ballSpeedY = -4;
+    double x = 320;
+    double y = 200;
+    Random random = new Random();
 
     @Override
     public void start(Stage stage) {
@@ -81,7 +87,8 @@ public class HelloFX extends Application {
         });
 
         //Paddle movement
-        AnimationTimer gameLoop = new AnimationTimer() {
+        AnimationTimer paddleMove = new AnimationTimer() {
+            @Override
             public void handle(long time) { //Checks time in nanosecond
                 double paddleX = paddle.getX();
                 int paddleSpeed = 6;
@@ -93,6 +100,51 @@ public class HelloFX extends Application {
                 }
             }
         };
+
+        //Ball movement
+        AnimationTimer ballMove = new AnimationTimer() {
+            @Override
+            public void handle(long time) {
+                x += ballSpeedX;
+                y += ballSpeedY;
+                if (x - 10 < 0) { //If ball is touching left wall
+                    ballSpeedX = Math.abs(ballSpeedX);
+                    x = 10; //Force ball right and flips movement to not get stuck in wall
+                }
+                else if (x + 10 > 640) { //If ball is touching right wall
+                    ballSpeedX = -Math.abs(ballSpeedX);
+                    x = 630; //Force ball left and flips movement to not get stuck in wall
+                }
+                if (y - 10 < 0) { //If ball is touching top wall
+                    ballSpeedY = Math.abs(ballSpeedY);
+                    y = 10; //Force ball down and flips movement to not get stuck in wall
+                }
+                else if (y + 10 > 480) { //if ball is touching bottom wall
+                    ballSpeedY = -Math.abs(ballSpeedY);
+                    y = 470; //Force ball up and flips movement to not get stuck in wall
+                }
+                double paddleX = paddle.getX(); //Check if ball is touching paddle
+                if (y + 10 >= 430 && y - 10 <= 445) { //If ball y is touching top of paddle
+                    if (x + 10 >= paddleX && x - 10 <= paddleX + 100) { //If ball is between left edge to right edge of paddle
+                        ballSpeedY = -Math.abs(ballSpeedY); //Force ball upwards and flip direction
+                        y = 420;
+                    }
+                }
+                //Move ball
+                ball.setCenterX(x);
+                ball.setCenterY(y);
+            }
+        };
+
+        //Randomize ball speed
+        double ballSpeedRandom = 3.0 + (random.nextDouble() * 1.5); //Ensures the x value is between 3.0 to 5.0
+        if (random.nextBoolean()) { //If true ball starts going right
+            ballSpeedX = ballSpeedRandom;
+        }
+        else { //If false ball starts going left
+            ballSpeedX = -ballSpeedRandom;
+        }
+        ballSpeedY = -(3.0 + (random.nextDouble() * 1.5)); //Ensures the y value is between -4.0 and -6.0
         
         //Countdown for ball to move
         Label countdownTimer = new Label("3");
@@ -101,7 +153,8 @@ public class HelloFX extends Application {
         countdownTimer.setLayoutX(300);
         countdownTimer.setLayoutY(200);
         long[] startTime = {0};
-        AnimationTimer ballStart = new AnimationTimer() {
+        AnimationTimer ballCountdown = new AnimationTimer() {
+            @Override
             public void handle(long time) {
                 if (startTime[0] == 0) { //Sets temp variable at current time
                     startTime[0] = time;
@@ -116,10 +169,11 @@ public class HelloFX extends Application {
                 }
                 if (elaspedTime >= 3_000_000_000L && elaspedTime <= 4_000_000_000L) {
                     countdownTimer.setText("GO");
+                    ballMove.start(); //Start ball movement after countdown ends
                 }
                 else if (elaspedTime >= 4_000_000_000L) {
                     gameLayer.getChildren().remove(countdownTimer);
-                    stop();
+                    stop(); //Stop countdown timer so it doesnt keep running in background.
                 }
             }
         };
@@ -127,8 +181,8 @@ public class HelloFX extends Application {
         //Button action on click
         startButton.setOnAction(event -> {
             stage.setScene(gameScene);
-            gameLoop.start();
-            ballStart.start();
+            paddleMove.start();
+            ballCountdown.start();
         });
 
         stage.setTitle("Brick Breaker Game");
