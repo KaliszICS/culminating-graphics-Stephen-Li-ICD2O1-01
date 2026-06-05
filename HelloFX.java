@@ -37,35 +37,66 @@ public class HelloFX extends Application {
     @Override
     public void start(Stage stage) {
         //Menu Setup
-        Label l = new Label("Brick Breaker Game");
-        l.setFont(new Font("Arial", 30));
-        l.setTextFill(Color.WHITE); //make background black and text white
+        Label label1 = new Label("Brick Breaker Game");
+        label1.setFont(new Font("Arial", 30));
+        label1.setTextFill(Color.WHITE); //make background black and text white
         Button startButton = new Button("Start Game");
+        Button instructions = new Button("How to play");
+        Button goBack = new Button("Return");
 
+        //Position items on menulayer
         StackPane menuLayer = new StackPane();
         menuLayer.setBackground(new Background(new BackgroundFill(Color.DARKGRAY, null, null)));
-        StackPane.setAlignment(l, Pos.TOP_CENTER); //Positions title
-        StackPane.setMargin(l, new Insets(50, 8, 8, 8));
+        StackPane.setAlignment(label1, Pos.TOP_CENTER); //Positions title
+        StackPane.setMargin(label1, new Insets(50, 8, 8, 8));
+        StackPane.setAlignment(instructions, Pos.BOTTOM_CENTER); //Positions How to play button
+        StackPane.setMargin(instructions, new Insets(8, 8, 150, 8));
         StackPane.setAlignment(startButton, Pos.BOTTOM_CENTER); //Positions button
-        StackPane.setMargin(startButton, new Insets(8, 8, 50, 8));
-
-        menuLayer.getChildren().add(l); //Adds all elements into the menu
-        menuLayer.getChildren().add(startButton);
+        StackPane.setMargin(startButton, new Insets(8, 8, 100, 8));
+        
+        //Adds all elements into the menu
+        menuLayer.getChildren().addAll(label1, startButton, instructions); 
         Scene menuScene = new Scene(menuLayer, 640, 480);
 
         //Create game layer
         Pane gameLayer = new Pane();
         gameLayer.setBackground(new Background(new BackgroundFill(Color.DARKGRAY, null, null)));
 
+        //Create How to play layer
+        StackPane manualLayer = new StackPane();
+        manualLayer.setBackground(new Background(new BackgroundFill(Color.DARKGRAY, null, null)));
+
+        //Position items on How to play layer
+        StackPane.setAlignment(goBack, Pos.BOTTOM_RIGHT);
+        StackPane.setMargin(goBack, new Insets(8, 8, 8, 8));
+        Label label2 = new Label("Controls"); //Create and position label2
+        label2.setFont(new Font("Arial", 40));
+        StackPane.setAlignment(label2, Pos.TOP_CENTER);
+        StackPane.setMargin(label2, new Insets(10, 8, 8, 8));
+        Label label3 = new Label(" o Left Arrow Key / A - Move Paddle Left\n o Right Arrow Key / D - Move Paddle Right"); //Create and position label3 
+        label3.setFont(new Font("Arial", 20));
+        StackPane.setAlignment(label3, Pos.TOP_CENTER);
+        StackPane.setMargin(label3, new Insets(60, 8, 8, 8));
+        Label label4 = new Label("Objective"); //Create and position label4
+        label4.setFont(new Font("Arial", 40));
+        StackPane.setAlignment(label4, Pos.TOP_CENTER);
+        StackPane.setMargin(label4, new Insets(130, 8, 8, 8));
+        Label label5 = new Label(" o Destroy all bricks on the screen using the bouncing ball\n o Keep the ball from passing below your paddle.\n      o You will lose the game if it does"); //Create and position label5
+        label5.setFont(new Font("Arial", 20));
+        StackPane.setAlignment(label5, Pos.TOP_CENTER);
+        StackPane.setMargin(label5, new Insets(180, 8, 8, 8));
+
         //Create shapes
         Rectangle paddle = new Rectangle(270, 430, 100, 15);
         Circle ball = new Circle(320, 200, 10);
 
-        //Add shapes into game layer
-        gameLayer.getChildren().add(ball);
-        gameLayer.getChildren().add(paddle);
+        //Add shapes into layers
+        gameLayer.getChildren().addAll(ball, paddle);
+        manualLayer.getChildren().addAll(label2, label3, label4, label5, goBack);
 
+        //Create both scenes
         Scene gameScene = new Scene(gameLayer, 640, 480);
+        Scene manualScene = new Scene(manualLayer, 640, 480);
 
         //Checking if key pressed using booleans to have smooth paddle movement
         gameScene.setOnKeyPressed(event -> {
@@ -137,14 +168,14 @@ public class HelloFX extends Application {
         };
 
         //Randomize ball speed
-        double ballSpeedRandom = 3.0 + (random.nextDouble() * 1.5); //Ensures the x value is between 3.0 to 5.0
+        double ballSpeedRandom = 3.0 + (random.nextDouble() * 1.5); //Ensures the x value is between 3.0 to 4.5
         if (random.nextBoolean()) { //If true ball starts going right
             ballSpeedX = ballSpeedRandom;
         }
         else { //If false ball starts going left
             ballSpeedX = -ballSpeedRandom;
         }
-        ballSpeedY = -(3.0 + (random.nextDouble() * 1.5)); //Ensures the y value is between -4.0 and -6.0
+        ballSpeedY = -(3.0 + (random.nextDouble() * 1.5)); //Ensures the y value is between -3.0 and -4.5
         
         //Countdown for ball to move
         Label countdownTimer = new Label("3");
@@ -178,11 +209,21 @@ public class HelloFX extends Application {
             }
         };
 
-        //Button action on click
+        //Button for starting the game
         startButton.setOnAction(event -> {
             stage.setScene(gameScene);
             paddleMove.start();
             ballCountdown.start();
+        });
+
+        //Button for how to play
+        instructions.setOnAction(event -> {
+            stage.setScene(manualScene);
+        });
+
+        //Button to return to main menu
+        goBack.setOnAction(event -> {
+            stage.setScene(menuScene);
         });
 
         stage.setTitle("Brick Breaker Game");
