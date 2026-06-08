@@ -23,6 +23,8 @@ import javafx.animation.AnimationTimer; //added
 import javafx.scene.layout.Background; //added
 import javafx.scene.layout.BackgroundFill; //added
 import java.util.Random; //added
+import java.util.ArrayList; //added
+import java.util.List; //added
 
 public class HelloFX extends Application {
     //Track if keys for paddle are pressed
@@ -33,6 +35,7 @@ public class HelloFX extends Application {
     double x = 320;
     double y = 200;
     Random random = new Random();
+    ArrayList<Rectangle> bricks = new ArrayList<>();
 
     @Override
     public void start(Stage stage) {
@@ -68,7 +71,7 @@ public class HelloFX extends Application {
 
         //Position items on How to play layer
         StackPane.setAlignment(goBack, Pos.BOTTOM_RIGHT);
-        StackPane.setMargin(goBack, new Insets(8, 8, 8, 8));
+        StackPane.setMargin(goBack, new Insets(8, 20, 20, 8));
         Label label2 = new Label("Controls"); //Create and position label2
         label2.setFont(new Font("Arial", 40));
         StackPane.setAlignment(label2, Pos.TOP_CENTER);
@@ -97,6 +100,33 @@ public class HelloFX extends Application {
         //Create both scenes
         Scene gameScene = new Scene(gameLayer, 640, 480);
         Scene manualScene = new Scene(manualLayer, 640, 480);
+
+        //Create grid for bricks
+        int rows = 4;
+        int columns = 6;
+        double brickWidth = 90;
+        double brickHeight = 25;
+        double spacing = 10; //Space between each brick
+        double gridStartX = 25; //Grids start X
+        double gridStartY = 50; //Grids start Y
+
+        //Loop for grid
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < columns; c++) {
+                //Find exact x and y of each brick
+                double brickX = gridStartX + c * (brickWidth + spacing); //25 + 0 * (100)
+                double brickY = gridStartY + r * (brickHeight + spacing);
+
+                //Create and color brick
+                Rectangle brick = new Rectangle(brickX, brickY, brickWidth, brickHeight);
+                brick.setFill(Color.RED);
+                brick.setStroke(Color.BLACK);
+
+                //Add brick into ArrayList and gameLayer
+                bricks.add(brick);
+                gameLayer.getChildren().add(brick);
+            }
+        }
 
         //Checking if key pressed using booleans to have smooth paddle movement
         gameScene.setOnKeyPressed(event -> {
@@ -164,6 +194,16 @@ public class HelloFX extends Application {
                 //Move ball
                 ball.setCenterX(x);
                 ball.setCenterY(y);
+                //Brick collisions
+                for (int i = bricks.size() - 1; i >= 0; i--) {
+                    Rectangle brick = bricks.get(i);
+                    if (ball.getBoundsInParent().intersects(brick.getBoundsInParent())) {
+                        gameLayer.getChildren().remove(brick);
+                        bricks.remove(i);
+                        ballSpeedY = -Math.abs(ballSpeedY);
+                        break;
+                    }
+                }
             }
         };
 
