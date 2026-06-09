@@ -35,7 +35,7 @@ public class HelloFX extends Application {
     double x = 320;
     double y = 200;
     Random random = new Random();
-    ArrayList<Rectangle> bricks = new ArrayList<>();
+    List<Rectangle> bricks = new ArrayList<>();
 
     @Override
     public void start(Stage stage) {
@@ -91,7 +91,7 @@ public class HelloFX extends Application {
 
         //Create shapes
         Rectangle paddle = new Rectangle(270, 430, 100, 15);
-        Circle ball = new Circle(320, 200, 10);
+        Circle ball = new Circle(320, 300, 10);
 
         //Add shapes into layers
         gameLayer.getChildren().addAll(ball, paddle);
@@ -156,7 +156,7 @@ public class HelloFX extends Application {
                 if (leftPressed == true && paddleX > 0) {
                     paddle.setX(paddleX - paddleSpeed);
                 }
-                else if (rightPressed == true && (paddleX < 640 - paddle.getWidth())) { //repeat for arrow keys
+                else if (rightPressed == true && (paddleX < 640 - paddle.getWidth())) {
                     paddle.setX(paddleX + paddleSpeed);
                 }
             }
@@ -191,23 +191,52 @@ public class HelloFX extends Application {
                         y = 420;
                     }
                 }
+
                 //Move ball
                 ball.setCenterX(x);
                 ball.setCenterY(y);
+
                 //Brick collisions
                 for (int i = bricks.size() - 1; i >= 0; i--) {
                     Rectangle brick = bricks.get(i);
-                    if (ball.getBoundsInParent().intersects(brick.getBoundsInParent())) {
-                        gameLayer.getChildren().remove(brick);
-                        bricks.remove(i);
-                        ballSpeedY = -Math.abs(ballSpeedY);
-                        break;
+                    //Find bounding edges of ball
+                    double ballMinX = x - 10;
+                    double ballMaxX = x + 10;
+                    double ballMinY = y + 10;
+                    double ballMaxY = y + 10;
+                    
+                    //Find bounding edges of brick to see which side the ball is hitting
+                    double brickMinX = brick.getX();
+                    double brickMaxX = brick.getX() + brickWidth;
+                    double brickMinY = brick.getY();
+                    double brickMaxY = brick.getY() + brickHeight;
+
+                    //Check if ball and brick are overlapping on x and y levels
+                    if (ballMaxX >= brickMinX && ballMinX <= brickMaxX) {
+                        if (ballMaxY >= brickMinY && ballMinY <= brickMaxY) {
+                            double overlapRight = ballMaxX - brickMinX;
+                            double overlapLeft = brickMaxX - ballMinX;
+                            double overlapTop = ballMaxY - brickMinY;
+                            double overlapBottom = brickMaxY = ballMinY;
+                        }
                     }
+                    // if (ball.getBoundsInParent().intersects(brick.getBoundsInParent())) {
+                    //     if (ballSpeedY < 0) { //If ball going up, force down
+                    //         ballSpeedY = Math.abs(ballSpeedY);
+                    //     }
+                    //     else { //If ball going down, force up
+                    //         ballSpeedY = -Math.abs(ballSpeedY);
+                    //     }
+                    //     //Remove brick from screen and arraylist
+                    //     gameLayer.getChildren().remove(brick);
+                    //     bricks.remove(i);
+                    //     break; //Prevent ball from flipping direction twice if touching two breaks at once
+                    // }
                 }
             }
         };
 
-        //Randomize ball speed
+        //Randomize ball speed and starting direction
         double ballSpeedRandom = 3.0 + (random.nextDouble() * 1.5); //Ensures the x value is between 3.0 to 4.5
         if (random.nextBoolean()) { //If true ball starts going right
             ballSpeedX = ballSpeedRandom;
