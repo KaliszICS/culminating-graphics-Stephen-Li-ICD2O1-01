@@ -8,23 +8,24 @@ Date Last Modified: June 10, 2026
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
-import javafx.scene.control.Button; //added
-import javafx.scene.layout.Pane; //added
+import javafx.scene.control.Button;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
-import javafx.scene.shape.Circle; //added
+import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
-import javafx.geometry.Pos; //added (tells positions on elements)
-import javafx.geometry.Insets; //added
-import javafx.scene.text.Font; //added
-import javafx.scene.paint.Color; //added
-import javafx.scene.input.KeyCode; //added
-import javafx.animation.AnimationTimer; //added
-import javafx.scene.layout.Background; //added
-import javafx.scene.layout.BackgroundFill; //added
-import java.util.Random; //added
-import java.util.ArrayList; //added
-import java.util.List; //added
+import javafx.geometry.Pos;
+import javafx.geometry.Insets;
+import javafx.scene.text.Font;
+import javafx.scene.paint.Color;
+import javafx.scene.input.KeyCode;
+import javafx.animation.AnimationTimer;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
+import java.util.Random;
+import java.util.ArrayList;
+import java.util.List;
+import javafx.scene.control.TextField;
 
 public class HelloFX extends Application {
     //Track if keys for paddle are pressed
@@ -37,6 +38,11 @@ public class HelloFX extends Application {
     Random random = new Random();
     List<Rectangle> bricks = new ArrayList<>();
     boolean ballStarted = false;
+    AnimationTimer ballMove;
+    int lives = 3;
+    int score = 0;
+    AnimationTimer ballCountdown;
+    long[] startTime = {0};
 
     @Override
     public void start(Stage stage) {
@@ -47,6 +53,22 @@ public class HelloFX extends Application {
         Button startButton = new Button("Start Game");
         Button instructions = new Button("How to play");
         Button goBack = new Button("Return");
+        TextField livesInput = new TextField(); //Find amount of lives wanted
+        livesInput.setMaxWidth(60);
+        livesInput.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue.isEmpty()) {
+                return;
+            }
+            if (!newValue.equals("1") && !newValue.equals("2") && !newValue.equals("3")) {
+                livesInput.setText(oldValue);
+            }
+        });
+        Label livesInstructions1 = new Label("Write the amount of lives(1-3)");
+        livesInstructions1.setFont(new Font("Arial", 15));
+        livesInstructions1.setTextFill(Color.BLACK);
+        Label livesInstructions2 = new Label("(If left empty will automatically be 3)");
+        livesInstructions2.setFont(new Font("Arial", 15));
+        livesInstructions2.setTextFill(Color.BLACK);
 
         //Position items on menulayer
         StackPane menuLayer = new StackPane();
@@ -57,20 +79,35 @@ public class HelloFX extends Application {
         StackPane.setMargin(instructions, new Insets(8, 8, 150, 8));
         StackPane.setAlignment(startButton, Pos.BOTTOM_CENTER); //Positions button
         StackPane.setMargin(startButton, new Insets(8, 8, 100, 8));
+        StackPane.setAlignment(livesInput, Pos.BOTTOM_CENTER);
+        StackPane.setMargin(livesInput, new Insets(8, 8, 70, 8));
+        StackPane.setAlignment(livesInstructions1, Pos.BOTTOM_LEFT);
+        StackPane.setMargin(livesInstructions1, new Insets(8, 8, 75, 60));
+        StackPane.setAlignment(livesInstructions2, Pos.BOTTOM_LEFT);
+        StackPane.setMargin(livesInstructions2, new Insets(8, 8, 50, 60));
         
         //Adds all elements into the menu
-        menuLayer.getChildren().addAll(label1, startButton, instructions); 
+        menuLayer.getChildren().addAll(label1, startButton, instructions, livesInput, livesInstructions1, livesInstructions2); 
         Scene menuScene = new Scene(menuLayer, 640, 480);
 
-        //Lose and Win Labels
+        //GameLayer Labels
         Label winloseText = new Label();
+        Label score = new Label();
+        Label livesLabel = new Label();
 
-        //Position and edit Lose and Win labels
-        StackPane.setMargin(winloseText, new Insets(20, 8, 20, 8));
-        StackPane.setAlignment(winloseText, Pos.BOTTOM_CENTER);
+        //Position and edit gameLayer labels
+        winloseText.setLayoutX(90);
+        winloseText.setLayoutY(270);
         winloseText.setFont(new Font("Arial", 100));
         winloseText.setTextFill(Color.BLACK);
-
+        score.setLayoutX(40);
+        score.setLayoutY(20);
+        score.setFont(new Font("Arial", 20));
+        score.setTextFill(Color.BLACK);
+        livesLabel.setLayoutX(560);
+        livesLabel.setLayoutY(15);
+        livesLabel.setFont(new Font("Arial", 15));
+        livesLabel.setTextFill(Color.BLACK);
 
         //Create game layer
         Pane gameLayer = new Pane();
@@ -83,30 +120,38 @@ public class HelloFX extends Application {
         //Position items on How to play layer
         StackPane.setAlignment(goBack, Pos.BOTTOM_RIGHT);
         StackPane.setMargin(goBack, new Insets(8, 20, 20, 8));
-        Label label2 = new Label("Controls"); //Create and position label2
+        Label label2 = new Label("Controls"); //Edit label for subtitle controls
         label2.setFont(new Font("Arial", 40));
         StackPane.setAlignment(label2, Pos.TOP_CENTER);
         StackPane.setMargin(label2, new Insets(10, 8, 8, 8));
-        Label label3 = new Label(" o Left Arrow Key / A - Move Paddle Left\n o Right Arrow Key / D - Move Paddle Right"); //Create and position label3 
+        Label label3 = new Label(" o Left Arrow Key / A - Move Paddle Left\n o Right Arrow Key / D - Move Paddle Right"); //Edit label for a list of main controls
         label3.setFont(new Font("Arial", 20));
-        StackPane.setAlignment(label3, Pos.TOP_CENTER);
+        StackPane.setAlignment(label3, Pos.TOP_LEFT);
         StackPane.setMargin(label3, new Insets(60, 8, 8, 8));
-        Label label4 = new Label("Objective"); //Create and position label4
+        Label label4 = new Label("Objective"); //Edit label for subtitile lose and win conditions
         label4.setFont(new Font("Arial", 40));
         StackPane.setAlignment(label4, Pos.TOP_CENTER);
-        StackPane.setMargin(label4, new Insets(130, 8, 8, 8));
-        Label label5 = new Label(" o Destroy all bricks on the screen using the bouncing ball\n o Keep the ball from passing below your paddle.\n      o You will lose the game if it does"); //Create and position label5
+        StackPane.setMargin(label4, new Insets(120, 8, 8, 8));
+        Label label5 = new Label(" o Destroy all bricks on the screen using the bouncing ball\n o Keep the ball from passing below your paddle.\n        o You will lose a life each time it does\n        o After you lose all your lives you will lose the game"); //Edit label for how to win and lose
         label5.setFont(new Font("Arial", 20));
-        StackPane.setAlignment(label5, Pos.TOP_CENTER);
-        StackPane.setMargin(label5, new Insets(180, 8, 8, 8));
+        StackPane.setAlignment(label5, Pos.TOP_LEFT);
+        StackPane.setMargin(label5, new Insets(170, 8, 8, 8));
+        Label label6 = new Label("Tips"); //Edit label for subtitle tips
+        label6.setFont(new Font("Arial", 40));
+        StackPane.setAlignment(label6, Pos.TOP_CENTER);
+        StackPane.setMargin(label6, new Insets(280, 8, 8, 8));
+        Label label7 = new Label(" o You can slightly control the angles of the ball with the \n    paddle\n        o Hitting the ball with the left or right edge of the\n           paddle will send it sharply in that direction"); //Edit label for aiming the ball with the paddle position
+        label7.setFont(new Font("Arial", 20));
+        StackPane.setAlignment(label7, Pos.TOP_LEFT);
+        StackPane.setMargin(label7, new Insets(330, 8, 8, 8));
 
         //Create shapes
         Rectangle paddle = new Rectangle(270, 430, 100, 15);
         Circle ball = new Circle(320, 300, 10);
 
         //Add shapes into layers
-        gameLayer.getChildren().addAll(ball, paddle, winloseText);
-        manualLayer.getChildren().addAll(label2, label3, label4, label5, goBack);
+        gameLayer.getChildren().addAll(ball, paddle, winloseText, score, livesLabel);
+        manualLayer.getChildren().addAll(label2, label3, label4, label5, label6, label7, goBack);
 
         //Create both scenes
         Scene gameScene = new Scene(gameLayer, 640, 480);
@@ -174,7 +219,7 @@ public class HelloFX extends Application {
         };
 
         //Ball movement
-        AnimationTimer ballMove = new AnimationTimer() {
+        ballMove = new AnimationTimer() {
             @Override
             public void handle(long time) {
                 x += ballSpeedX;
@@ -193,15 +238,36 @@ public class HelloFX extends Application {
                     y = 10; //Force ball down and flips movement to not get stuck in wall
                 }
                 else if (y + 10 > 480) { //if ball is touching bottom wall
-                    winloseText.setText("You Lose!");
-                    // ballSpeedY = -Math.abs(ballSpeedY);
-                    // y = 470; //Force ball up and flips movement to not get stuck in wall
+                    lives--;
+                    livesLabel.setText("Balls: " + lives);
+                    if (lives == 0) {
+                        winloseText.setText("You Lose!");
+                        ballMove.stop();
+                    }
+                    else {
+                        ballMove.stop(); //Stop ball movement
+                        x = 320; //Reset paddle location, ball location, flip ball direction
+                        y = 360;
+                        paddle.setX(270);
+                        ballSpeedY = -Math.abs(ballSpeedY);
+                        //Reset timer 
+                        startTime[0] = 0;
+                        ballStarted = false;
+                        ballCountdown.start();
+                    }
                 }
-                double paddleX = paddle.getX(); //Check if ball is touching paddle
-                if (y + 10 >= 430 && y - 10 <= 445) { //If ball y is touching top of paddle
-                    if (x + 10 >= paddleX && x - 10 <= paddleX + 100) { //If ball is between left edge to right edge of paddle
-                        ballSpeedY = -Math.abs(ballSpeedY); //Force ball upwards and flip direction
+                //Check if ball is touching paddle
+                double paddleX = paddle.getX();
+                if (y + 10 >= 430 && y + 10 <= 440) { //If ball y is touching top of paddle
+                    if (x + 10 >= paddleX && x - 10 <= paddleX + 100) { //If ball is in paddle width
+                        ballSpeedY = -Math.abs(ballSpeedY); //Always flip y direction
                         y = 420;
+                        if (x + 10 >= paddleX && x - 10 <= paddleX + 30) { //If ball is between left edge to 1/3 of paddle
+                            ballSpeedX = -Math.abs(ballSpeedY) - 1; //Aim ball direction more left
+                        }
+                        else if (x + 10 >= paddleX + 60 && x - 10 <= paddleX + 100) { //If ball is between 2/3 to right edge of paddle
+                            ballSpeedX = Math.abs(ballSpeedX) + 1; //Aim ball direction more right
+                        }
                     }
                 }
 
@@ -262,10 +328,11 @@ public class HelloFX extends Application {
                             bricks.remove(i);
                             break; //Prevent ball from flipping direction twice if touching two breaks at once
                         }
-                        if (bricks.size() == 0) {
-                            winloseText.setText("You Win!");
-                        }
                     }
+                }
+                if (bricks.size() == 0) {
+                    winloseText.setText("You Win!");
+                    ballMove.stop();
                 }
             }
         };
@@ -286,13 +353,15 @@ public class HelloFX extends Application {
         countdownTimer.setTextFill(Color.WHITE);
         countdownTimer.setLayoutX(300);
         countdownTimer.setLayoutY(200);
-        long[] startTime = {0};
-        AnimationTimer ballCountdown = new AnimationTimer() {
+        ballCountdown = new AnimationTimer() {
             @Override
             public void handle(long time) {
                 if (startTime[0] == 0) { //Sets temp variable at current time
                     startTime[0] = time;
-                    gameLayer.getChildren().add(countdownTimer);
+                    countdownTimer.setText("3");
+                    if (!gameLayer.getChildren().contains(countdownTimer)) { //Only add timer if its not already on screen
+                        gameLayer.getChildren().add(countdownTimer);
+                    }
                 }
                 long elaspedTime = time - startTime[0]; //Check how long has passed since timer started
                 if (elaspedTime >= 1_000_000_000L && elaspedTime <= 2_000_000_000L) {
@@ -322,6 +391,14 @@ public class HelloFX extends Application {
             stage.setScene(gameScene);
             paddleMove.start();
             ballCountdown.start();
+            String inputText = livesInput.getText();
+            if (!inputText.isEmpty()) {
+                lives = Integer.parseInt(inputText);
+            }
+            else {
+                lives = 3;
+            }
+            livesLabel.setText("Lives: " + lives);
         });
 
         //Button for how to play
@@ -342,5 +419,4 @@ public class HelloFX extends Application {
     public static void main(String[] args) {
         launch();
     }
-
 }
