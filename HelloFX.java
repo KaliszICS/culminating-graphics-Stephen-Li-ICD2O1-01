@@ -36,6 +36,7 @@ public class HelloFX extends Application {
     double y = 200;
     Random random = new Random();
     List<Rectangle> bricks = new ArrayList<>();
+    boolean ballStarted = false;
 
     @Override
     public void start(Stage stage) {
@@ -60,6 +61,16 @@ public class HelloFX extends Application {
         //Adds all elements into the menu
         menuLayer.getChildren().addAll(label1, startButton, instructions); 
         Scene menuScene = new Scene(menuLayer, 640, 480);
+
+        //Lose and Win Labels
+        Label winloseText = new Label();
+
+        //Position and edit Lose and Win labels
+        StackPane.setMargin(winloseText, new Insets(20, 8, 20, 8));
+        StackPane.setAlignment(winloseText, Pos.BOTTOM_CENTER);
+        winloseText.setFont(new Font("Arial", 100));
+        winloseText.setTextFill(Color.BLACK);
+
 
         //Create game layer
         Pane gameLayer = new Pane();
@@ -94,7 +105,7 @@ public class HelloFX extends Application {
         Circle ball = new Circle(320, 300, 10);
 
         //Add shapes into layers
-        gameLayer.getChildren().addAll(ball, paddle);
+        gameLayer.getChildren().addAll(ball, paddle, winloseText);
         manualLayer.getChildren().addAll(label2, label3, label4, label5, goBack);
 
         //Create both scenes
@@ -168,6 +179,7 @@ public class HelloFX extends Application {
             public void handle(long time) {
                 x += ballSpeedX;
                 y += ballSpeedY;
+                ball.setCenterX(x); //This is to keep the ball from jolting at the very start
                 if (x - 10 < 0) { //If ball is touching left wall
                     ballSpeedX = Math.abs(ballSpeedX);
                     x = 10; //Force ball right and flips movement to not get stuck in wall
@@ -181,8 +193,9 @@ public class HelloFX extends Application {
                     y = 10; //Force ball down and flips movement to not get stuck in wall
                 }
                 else if (y + 10 > 480) { //if ball is touching bottom wall
-                    ballSpeedY = -Math.abs(ballSpeedY);
-                    y = 470; //Force ball up and flips movement to not get stuck in wall
+                    winloseText.setText("You Lose!");
+                    // ballSpeedY = -Math.abs(ballSpeedY);
+                    // y = 470; //Force ball up and flips movement to not get stuck in wall
                 }
                 double paddleX = paddle.getX(); //Check if ball is touching paddle
                 if (y + 10 >= 430 && y - 10 <= 445) { //If ball y is touching top of paddle
@@ -202,7 +215,7 @@ public class HelloFX extends Application {
                     //Find bounding edges of ball
                     double ballMinX = x - 10;
                     double ballMaxX = x + 10;
-                    double ballMinY = y + 10;
+                    double ballMinY = y - 10;
                     double ballMaxY = y + 10;
                     
                     //Find bounding edges of brick to see which side the ball is hitting
@@ -214,24 +227,45 @@ public class HelloFX extends Application {
                     //Check if ball and brick are overlapping on x and y levels
                     if (ballMaxX >= brickMinX && ballMinX <= brickMaxX) {
                         if (ballMaxY >= brickMinY && ballMinY <= brickMaxY) {
+                            //Find how far the ball overlaps each side of the brick
                             double overlapRight = ballMaxX - brickMinX;
                             double overlapLeft = brickMaxX - ballMinX;
                             double overlapTop = ballMaxY - brickMinY;
-                            double overlapBottom = brickMaxY = ballMinY;
+                            double overlapBottom = brickMaxY - ballMinY;
+
+                            //Find the smallest overlap distance to know which side was hit
+                            double overlapX = Math.min(overlapLeft, overlapRight);
+                            double overlapY = Math.min(overlapTop, overlapBottom);
+
+                            //change direction correctly
+                            if (overlapX < overlapY) { //Hits vertical side of brick (left or right)
+                                if (ballSpeedX > 0) { //If hitting left, push ball left to not stick in brick
+                                    ballSpeedX = -Math.abs(ballSpeedX);
+                                    x = brickMinX - 10;
+                                }
+                                else { //If hitting right, push ball right to not stick
+                                    ballSpeedX = Math.abs(ballSpeedX);
+                                    x = brickMaxX + 10;
+                                }
+                            }
+                            else { //Hits horizontal side of brick (top or bottom)
+                                if (ballSpeedY < 0) { //If hitting bottom, push down to not stick
+                                    ballSpeedY = Math.abs(ballSpeedY);
+                                    y = brickMaxY + 10;
+                                }
+                                else { //If hitting top, push up to not stick
+                                    ballSpeedY = -Math.abs(ballSpeedY);
+                                    y = brickMinY - 10;
+                                }
+                            }
+                            gameLayer.getChildren().remove(brick);
+                            bricks.remove(i);
+                            break; //Prevent ball from flipping direction twice if touching two breaks at once
+                        }
+                        if (bricks.size() == 0) {
+                            winloseText.setText("You Win!");
                         }
                     }
-                    // if (ball.getBoundsInParent().intersects(brick.getBoundsInParent())) {
-                    //     if (ballSpeedY < 0) { //If ball going up, force down
-                    //         ballSpeedY = Math.abs(ballSpeedY);
-                    //     }
-                    //     else { //If ball going down, force up
-                    //         ballSpeedY = -Math.abs(ballSpeedY);
-                    //     }
-                    //     //Remove brick from screen and arraylist
-                    //     gameLayer.getChildren().remove(brick);
-                    //     bricks.remove(i);
-                    //     break; //Prevent ball from flipping direction twice if touching two breaks at once
-                    // }
                 }
             }
         };
@@ -264,12 +298,17 @@ public class HelloFX extends Application {
                 if (elaspedTime >= 1_000_000_000L && elaspedTime <= 2_000_000_000L) {
                     countdownTimer.setText("2");
                 }
-                if (elaspedTime >= 2_000_000_000L && elaspedTime <= 3_000_000_000L) {
+                else if (elaspedTime >= 2_000_000_000L && elaspedTime <= 3_000_000_000L) {
                     countdownTimer.setText("1");
                 }
-                if (elaspedTime >= 3_000_000_000L && elaspedTime <= 4_000_000_000L) {
+                else if (elaspedTime >= 3_000_000_000L && elaspedTime <= 4_000_000_000L) {
                     countdownTimer.setText("GO");
-                    ballMove.start(); //Start ball movement after countdown ends
+                    if (!ballStarted) { //Ensures that the ball starts once and not 60 times
+                        x = ball.getCenterX();
+                        y = ball.getCenterY();
+                        ballMove.start(); //Start ball movement after countdown ends
+                        ballStarted = true;
+                    }
                 }
                 else if (elaspedTime >= 4_000_000_000L) {
                     gameLayer.getChildren().remove(countdownTimer);
