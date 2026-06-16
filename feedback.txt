@@ -1,0 +1,9 @@
+K(30%): 100
+I(30%): 95
+C(10%): 100
+A(30%): 100
+98.5
+
+Amazing work Stephen.  My only criticism is to use more functions to break up the code to make it easier to read.
+One goal is programming is to try and make it so that your code is easy to read and edit at a surface level.
+Functions do this by using names that break up the code into an easy to read format to see the overall flow of the code.
